@@ -11,7 +11,7 @@ from arl.identity import RegisteredPeerVerifier, process_identity
 from tests.test_runtime import RuntimeCase, running
 
 
-@unittest.skipUnless(sys.platform == "darwin", "Real macOS peer identity test")
+@unittest.skipUnless(sys.platform == "darwin" or sys.platform.startswith("linux"), "需要 Unix 内核身份接口")
 class IdentityTests(RuntimeCase):
     def test_registered_kernel_pid_can_read_mock_private_tool_spoof_rejected(self):
         verifier = RegisteredPeerVerifier({"tisra", "friday", "mio"})

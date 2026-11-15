@@ -206,9 +206,14 @@ class Session:
   return 'process_exited' if self.process.returncode else 'no_diagnostic'
 
 class CodexTextAdapter:
- def __init__(self,binary=DEFAULT_BINARY,*,enabled=False,test_command=None,observer=None):
+ def __init__(self,binary=DEFAULT_BINARY,*,enabled=False,test_command=None,observer=None,expected_sha256=None):
   self.binary=Path(binary).resolve(strict=True) if test_command is None else Path(binary)
   self.pin=hashlib.sha256(self.binary.read_bytes()).hexdigest() if test_command is None else None
+  self.expected_sha256=expected_sha256
+  if expected_sha256 is not None:
+   if (not sys.platform.startswith('linux') or test_command is not None or
+       type(expected_sha256) is not str or re.fullmatch(r'[a-f0-9]{64}',expected_sha256) is None or
+       self.pin!=expected_sha256):raise Fault('provider_binary_changed')
   self.enabled=enabled;self.test_command=test_command;self.observer=observer
   self.timeout=30
   # Private host-only observer; never grants or launches a domain.
@@ -234,6 +239,11 @@ class CodexTextAdapter:
   self.pin=current
   self._execution_catalog_cache=None
  def verify_official_binary(self):
+  if sys.platform.startswith('linux'):
+   # Linux 采用部署者固定的发行摘要，不冒充 Apple 签名，也不自动接受二进制更新。
+   if self.expected_sha256 is None or hashlib.sha256(self.binary.read_bytes()).hexdigest()!=self.expected_sha256:
+    raise Fault('provider_update_unverified')
+   return
   if self.binary!=DEFAULT_BINARY.resolve(strict=True):raise Fault('provider_binary_changed')
   requirement='anchor apple generic and identifier "codex" and certificate leaf[subject.OU] = "2DC432GLL2"'
   try:

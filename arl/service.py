@@ -75,6 +75,9 @@ class JobContext:
             route.check_running(self.owner, self.row["tool"], json.loads(self.row["args"]))
         if self.row['tool']==PLANNING_NAME and self.runtime.admission is not None:
             self.runtime.admission(self.owner,self.row['tool'],json.loads(self.row['args']))
+        services = getattr(self.runtime, 'linux_services', None)
+        if services is not None and self.row['tool'] in services.schema:
+            services.admit(self.owner, self.row['tool'], json.loads(self.row['args']))
         if self.runtime.stopping.is_set() or self.runtime.store.is_cancelled(self.row["id"]):
             raise Cancelled()
         if self.deadline is not None and time.monotonic() >= self.deadline:

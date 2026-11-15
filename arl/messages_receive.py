@@ -214,6 +214,8 @@ def build_native_receive_transport(home):
     """
     try:
         code = Path(__file__).absolute().parents[1]
+        if len(code.parents) < 4:
+            return None, "not_packaged"
         app = code.parents[3]
         if app.suffix != ".app" or code != app / "Contents/Resources/CoreRuntime/code":
             return None, "not_packaged"

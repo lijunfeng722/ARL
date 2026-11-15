@@ -7,6 +7,9 @@ from pathlib import Path
 from .contracts import Fault, Tool, validate
 
 SCHEMA_PATH = Path(__file__).resolve().parents[1] / "docs" / "mio-tools.json"
+# 安装后的 wheel 从包内读取同一协议快照，源码仍以 docs 为准。
+if not SCHEMA_PATH.is_file():
+    SCHEMA_PATH = Path(__file__).resolve().parent / "static" / "mio-tools.json"
 
 
 class TravelAdapter:

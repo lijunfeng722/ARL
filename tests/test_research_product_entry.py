@@ -143,7 +143,7 @@ class ProductResearchEntryTests(unittest.TestCase):
             class Connection:
                 def getsockopt(self, level, name, length):
                     self_call = 417
-                    return self_call.to_bytes(4, 'little', signed=True)
+                    return struct.pack('iII', self_call, os.geteuid(), os.getegid()) if length == 12 else struct.pack('i',self_call)
             connection = Connection()
             identity = {'uid': os.geteuid(), 'birth': (1, 2),
                         'executable': str(app.resolve())}
@@ -259,7 +259,7 @@ class ProductResearchEntryTests(unittest.TestCase):
                 def __init__(self, pid): self.pid = pid
                 def getsockopt(self, level, name, length):
                     self.assert_socket = (level, name, length)
-                    return struct.pack('i', self.pid)
+                    return struct.pack('iII', self.pid, os.geteuid(), os.getegid()) if length == 12 else struct.pack('i',self.pid)
             identity = lambda pid: {'uid': os.geteuid(), 'birth': (pid, 2),
                                     'executable': str(app.resolve())}
             barrier = threading.Barrier(3)

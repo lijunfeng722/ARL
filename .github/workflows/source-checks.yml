@@ -22,6 +22,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: 准备固定 Linux 服务依赖
+        run: python -m pip install '.[linux]'
       - name: Core, policy, parser and publication regressions
         run: python -B script/check.py --profile portable --output build/ci-portable
       - name: Preserve failing test receipts

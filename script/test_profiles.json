@@ -189,6 +189,15 @@
       "reason": "Actual Apple source compilation or kernel process identity",
       "requires": []
     },
+    "tests.test_application_native": {
+      "kind": "unittest",
+      "profile": "native",
+      "reason": "Compile actual native discovery and Notes boundaries with synthetic events; no live services",
+      "requires": [
+        "macos",
+        "swift"
+      ]
+    },
     "tests.test_application_platform": {
       "kind": "unittest",
       "profile": "portable",
@@ -568,12 +577,9 @@
     },
     "tests.test_identity": {
       "kind": "unittest",
-      "profile": "native",
-      "reason": "Actual Apple source compilation or kernel process identity",
-      "requires": [
-        "macos",
-        "swift"
-      ]
+      "profile": "portable",
+      "reason": "Linux 与 macOS 的真实 Unix 内核进程身份；其他平台由测试声明跳过",
+      "requires": []
     },
     "tests.test_install_child_drain": {
       "kind": "unittest",
@@ -658,6 +664,18 @@
         "macos",
         "swift"
       ]
+    },
+    "tests.test_linux_host": {
+      "kind": "unittest",
+      "profile": "portable",
+      "reason": "Linux 宿主和服务边界使用隔离临时配置与合成响应，不接触家庭或供应商账号",
+      "requires": []
+    },
+    "tests.test_linux_services": {
+      "kind": "unittest",
+      "profile": "portable",
+      "reason": "Linux 宿主和服务边界使用隔离临时配置与合成响应，不接触家庭或供应商账号",
+      "requires": []
     },
     "tests.test_messages_receive": {
       "kind": "unittest",
@@ -1362,15 +1380,6 @@
       "profile": "portable",
       "reason": "Public core packaging and source-contained migration tests",
       "requires": []
-    },
-    "tests.test_application_native": {
-      "kind": "unittest",
-      "profile": "native",
-      "reason": "Compile actual native discovery and Notes boundaries with synthetic events; no live services",
-      "requires": [
-        "macos",
-        "swift"
-      ]
     }
   },
   "profiles": {

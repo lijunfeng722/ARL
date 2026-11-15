@@ -237,6 +237,8 @@ def build_codex_activation(home):
         config, seal = read_codex_configuration(home)
         if config is None:return None, None, 'not_configured'
         code = Path(__file__).resolve().parents[1]
+        if len(code.parents) < 4:
+            raise Fault('codex_native_owner_unavailable')
         app = code.parents[3]
         if app.suffix != '.app' or code != app/'Contents/Resources/CoreRuntime/code':
             raise Fault('codex_native_owner_unavailable')

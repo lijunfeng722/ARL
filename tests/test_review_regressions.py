@@ -66,7 +66,7 @@ class ReviewRegressions(RuntimeCase):
         class Connection:
             def getsockopt(self, *args):
                 import struct
-                return struct.pack("i", 7)
+                return struct.pack("iII", 7, os.geteuid(), os.getegid()) if args[2] == 12 else struct.pack("i", 7)
         answer = []
         def slow_identity(pid):
             entered.set(); proceed.wait(2)

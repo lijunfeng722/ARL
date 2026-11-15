@@ -5,11 +5,11 @@ is self-declared, never publisher attestation. Registration admits only the
 already-enabled model service; Apple/NAS/credential tools remain separately gated.
 """
 from __future__ import annotations
-import hashlib,json,os,re,socket,struct,sys,threading,time
+import hashlib,json,os,re,threading,time
 from pathlib import Path
 from .contracts import AppPolicy,Fault,encode,validate
 from .control import AppDescriptor
-from .identity import process_identity
+from .identity import process_identity, peer_pid
 from .codex_packages import PackageRegistry,read_private,validate_packages
 from .app_connections import token,CHALLENGE_MS
 
@@ -33,20 +33,12 @@ def scenarios(value):
     return out
 
 def kernel_peer(connection):
-    if sys.platform=='darwin':
-        pid=struct.unpack('i',connection.getsockopt(0,2,4))[0]
-        identity=process_identity(pid)
-    elif sys.platform.startswith('linux'):
-        pid,uid,_=struct.unpack('3i',connection.getsockopt(socket.SOL_SOCKET,socket.SO_PEERCRED,12))
-        raw=Path('/proc',str(pid),'stat').read_text().rsplit(')',1)[1].split()
-        identity={'uid':uid,'birth':raw[19],'executable':os.readlink(f'/proc/{pid}/exe')}
-    else:raise Fault('identity_platform_unsupported')
+    pid=peer_pid(connection)
+    identity=process_identity(pid)
     if identity['uid']!=os.geteuid():raise Fault('peer_not_authorized')
     def current():
         try:
-            if sys.platform=='darwin':return process_identity(pid)==identity
-            raw=Path('/proc',str(pid),'stat').read_text().rsplit(')',1)[1].split()
-            return raw[19]==identity['birth'] and os.readlink(f'/proc/{pid}/exe')==identity['executable'] and Path('/proc',str(pid)).stat().st_uid==identity['uid']
+            return process_identity(pid)==identity
         except (OSError,ValueError,Fault):return False
     return hashlib.sha256(encode([pid,identity])).hexdigest(),current
 

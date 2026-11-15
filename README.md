@@ -1,5 +1,7 @@
 # ARL · Agent Runtime Layer
 
+Linux x86_64 的 Python 宿主、模型配置和迁移边界见[Linux 宿主说明](docs/linux-host.md)。
+
 > **当前接入与配置：** [通用应用 SDK](docs/APPLICATION-PLATFORM.md)、[五档模型套餐](docs/CODEX-MODEL-SETTINGS.md)、[运行时守护](docs/RUNTIME-SUPERVISION.md)。源码检查、真实模型调用和设备业务验收分别记录；下文历史版本的业务边界不代表已重新验通。
 
 家中 Mac 的 Agent 与工具运行层。让本地应用和远端会话在真实身份、连接、权限与结果边界内使用能力。

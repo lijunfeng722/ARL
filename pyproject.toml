@@ -14,3 +14,9 @@ arl = "arl.__main__:main"
 
 [tool.setuptools.packages.find]
 include = ["arl*"]
+
+[project.optional-dependencies]
+linux = ["cryptography==50.0.2"]
+
+[tool.setuptools.package-data]
+arl = ["static/linux_settings.html", "static/linux_settings.css", "static/linux_settings.js", "static/mio-tools.json", "static/service-connections.json"]

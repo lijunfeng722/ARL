@@ -46,6 +46,10 @@ TRACES=[]
 class Connection:
     def __init__(self,pid):self.pid=pid
     def getsockopt(self,level,option,size):
+        if size == 12:
+            import socket
+            assert (level,option)==(socket.SOL_SOCKET,socket.SO_PEERCRED)
+            return struct.pack('iII',self.pid,os.geteuid(),os.getegid())
         assert (level,option,size)==(0,2,4)
         return struct.pack('i',self.pid)
 

@@ -8,6 +8,9 @@ import unicodedata
 from .contracts import Fault
 
 CATALOG = Path(__file__).resolve().parents[1] / 'docs/service-connections.json'
+# 安装后的 wheel 从包内读取同一协议快照，源码仍以 docs 为准。
+if not CATALOG.is_file():
+    CATALOG = Path(__file__).resolve().parent / "static" / "service-connections.json"
 _LIMIT = 16384
 _CONTRACTS = {
     'amap': ('amap.maps-weather', ['mio_maps_']),

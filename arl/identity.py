@@ -9,6 +9,7 @@ from __future__ import annotations
 import ctypes
 import hashlib
 import os
+import socket
 import struct
 import sys
 import threading
@@ -27,6 +28,10 @@ class BSDInfo(ctypes.Structure):
 
 
 def process_identity(pid):
+    if type(pid) is not int or pid <= 0:
+        raise Fault("peer_identity_unavailable")
+    if sys.platform.startswith("linux"):
+        return linux_process_identity(pid)
     if sys.platform != "darwin":
         raise Fault("identity_platform_unsupported")
     library = ctypes.CDLL("/usr/lib/libproc.dylib", use_errno=True)
@@ -40,6 +45,38 @@ def process_identity(pid):
         raise Fault("peer_identity_unavailable")
     return {"uid": info.uid, "birth": (info.start_sec, info.start_usec),
             "executable": str(Path(os.fsdecode(path.value)).resolve())}
+
+
+def linux_process_identity(pid):
+    """从内核读取进程代次，前后核对避免退出或 PID 重用混合两次读取。"""
+    root = Path('/proc') / str(pid)
+    try:
+        before = (root / 'stat').read_text().rsplit(')', 1)[1].split()
+        status = (root / 'status').read_text().splitlines()
+        uids = next(line.split()[1:] for line in status if line.startswith('Uid:'))
+        executable = os.readlink(root / 'exe')
+        after = (root / 'stat').read_text().rsplit(')', 1)[1].split()
+        if (before[19] != after[19] or before[0] == 'Z' or after[0] == 'Z'
+                or len(uids) != 4 or executable.endswith(' (deleted)')):
+            raise Fault('peer_identity_unavailable')
+        boot = Path('/proc/sys/kernel/random/boot_id').read_text().strip()
+        return {'uid': int(uids[1]), 'birth': (boot, int(after[19])),
+                'executable': executable}
+    except (OSError, ValueError, IndexError, StopIteration):
+        raise Fault('peer_identity_unavailable') from None
+
+
+def peer_pid(connection):
+    """只接受 Unix socket 的内核对端身份，不接收调用方提供的 PID。"""
+    if sys.platform == 'darwin':
+        return struct.unpack('i', connection.getsockopt(0, 2, 4))[0]
+    if sys.platform.startswith('linux'):
+        pid, uid, _ = struct.unpack('iII', connection.getsockopt(
+            socket.SOL_SOCKET, socket.SO_PEERCRED, 12))
+        if uid != os.geteuid():
+            raise Fault('peer_not_authorized')
+        return pid
+    raise Fault('identity_platform_unsupported')
 
 
 class RegisteredPeerVerifier:
@@ -128,15 +165,15 @@ class RegisteredPeerVerifier:
     def session_binding(self, connection, app):
         if self(connection, app) != app:
             raise Fault('app_identity_unverified')
-        pid = struct.unpack('i', connection.getsockopt(0, 2, 4))[0]
+        pid = peer_pid(connection)
         lease = self.capture_registration(app, pid)
         key = hashlib.sha256((self._subject_epoch+':'+app+':'+str(lease.epoch)).encode()).hexdigest()
         return key, lease.is_current
 
     def __call__(self, connection, claimed_app):
-        # SOL_LOCAL=0, LOCAL_PEERPID=2 from this Mac's SDK sys/un.h.
+        # 各平台都以当前内核对端和已登记进程代次进行核验。
         try:
-            pid = struct.unpack("i", connection.getsockopt(0, 2, 4))[0]
+            pid = peer_pid(connection)
             with self.lock:
                 registered = self.registry.get(pid)
             if registered is None or registered[0] != claimed_app:
